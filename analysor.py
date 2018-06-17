@@ -1,8 +1,11 @@
 import json
 import os
 import re
-import numpy as np
+
 from textblob import TextBlob
+from textblob_de import TextBlobDE as TextBlobDE
+from textblob_fr import PatternTagger as TaggerFR, PatternAnalyzer as AnalyzerFR
+from polyglot.text import Text
 
 '''
 What is in a tweet:
@@ -45,18 +48,37 @@ countries = {
 
 
 def cleanText(text):
-    return ' '.join(re.sub("(@[A-Za-z0-9]+)|([^0-9A-Za-z \t])|(\w+:\/\/\S+)", " ", text).split())
+    return " ".join(re.sub("(@[A-Za-z0-9]+)|([^0-9A-Za-z \t])|(\w+:\/\/\S+)", " ", text).split())
 
 
-def getSentiment(tweet):
-    analysis = TextBlob(tweet)
-    return analysis.sentiment.polarity
+def getSentiment(tweet, language):
+    if language == "en":
+        analysis = TextBlob(tweet)
+        return {"polarity": analysis.sentiment.polarity, "subjectivity": analysis.sentiment.subjectivity}
+    elif language == "de":
+        analysis = TextBlobDE(tweet)
+        return {"polarity": analysis.sentiment.polarity, "subjectivity": analysis.sentiment.subjectivity}
+    elif language == "hr":
+        analysis = Text(tweet)
+        return {"polarity": analysis.polarity, "subjectivity": 0}
+    elif language == "fr":
+        analysis = TextBlob(tweet, pos_tagger=TaggerFR(), analyzer=AnalyzerFR())
+        return {"polarity": analysis.polarity, "subjectivity": analysis.subjectivity}
+    elif language == "und":  # Undefined
+        try:
+            analysis = Text(tweet)
+            return {"polarity": analysis.polarity, "subjectivity": 0}
+        except Exception:
+            return None
+    return None
 
 
 def extractInfo(tweet):
     information = {}
-    if "text" in tweet.keys():
-        information["text"] = tweet["text"]
+    if not all(key in tweet.keys() for key in ["text", "lang"]):
+        return None
+    information["text"] = tweet["text"]
+    information["lang"] = (tweet["lang"] + "-").split("-")[0]
     if "coordinates" in tweet.keys():
         try:
             information["coordinates"] = [tweet["coordinates"]["coordinates"][1],
@@ -83,7 +105,7 @@ def extractInfo(tweet):
         try:
             countryCode = tweet["place"]["country_code"]
         except TypeError:
-            countryCode = None
+            return None
         information["place"] = {
             "bounding_box": boundingBox,
             "name": name,
@@ -91,9 +113,14 @@ def extractInfo(tweet):
             "full_name": fullName,
             "country_code": countryCode
         }
-    if "created_at" in tweet.keys():
-        information["created_at"] = tweet["created_at"]
-    information["sentiment"] = getSentiment(cleanText(information["text"]))
+    else:
+        return None
+
+    information["created_at"] = tweet["created_at"] if ("created_at" in tweet.keys()) else None
+    sentiment = getSentiment(cleanText(information["text"]), information["lang"])
+    if sentiment is None:
+        return None
+    information["sentiment"] = sentiment
     return information
 
 
@@ -112,11 +139,12 @@ tweets = []
 for filename in os.listdir("data/"):
     with open("data/" + filename, "r") as f:
         for line in f.readlines():
-            tweets.append(extractInfo(json.loads(line)))
+            tweet = extractInfo(json.loads(line))
+            if tweet is not None:
+                tweets.append(tweet)
     print(str(len(tweets)) + " tweets")
 
 for tweet in tweets:
-    # Do the analysis
     for country, targets in countries.items():
         if isFromCountry(tweet, country):
             for target, keywords in targets.items():
