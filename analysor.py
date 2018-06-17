@@ -1,4 +1,8 @@
 import json
+import os
+import re
+import numpy as np
+from textblob import TextBlob
 
 '''
 What is in a tweet:
@@ -38,6 +42,15 @@ countries = {
     "uk": countriesEN,
     "usa": countriesEN
 }
+
+
+def cleanText(text):
+    return ' '.join(re.sub("(@[A-Za-z0-9]+)|([^0-9A-Za-z \t])|(\w+:\/\/\S+)", " ", text).split())
+
+
+def getSentiment(tweet):
+    analysis = TextBlob(tweet)
+    return analysis.sentiment.polarity
 
 
 def extractInfo(tweet):
@@ -80,14 +93,33 @@ def extractInfo(tweet):
         }
     if "created_at" in tweet.keys():
         information["created_at"] = tweet["created_at"]
+    information["sentiment"] = getSentiment(cleanText(information["text"]))
     return information
 
 
+def isFromCountry(tweet, country):
+    return tweet["place"]["country_code"] == {
+        "austria": "AT",
+        "croatia": "HR",
+        "france": "FR",
+        "uk": "GB",
+        "usa": "US"
+    }[country]
+
+
 tweets = []
-with open("data/2018-05-18.json", "r") as f:
-    for line in f.readlines():
-        tweets.append(extractInfo(json.loads(line)))
-print(str(len(tweets)) + " tweets")
+
+for filename in os.listdir("data/"):
+    with open("data/" + filename, "r") as f:
+        for line in f.readlines():
+            tweets.append(extractInfo(json.loads(line)))
+    print(str(len(tweets)) + " tweets")
+
 for tweet in tweets:
     # Do the analysis
-    print(tweet)
+    for country, targets in countries.items():
+        if isFromCountry(tweet, country):
+            for target, keywords in targets.items():
+                if any(keyword in tweet["text"] for keyword in keywords):
+                    with open("analysed/" + country + "/" + target + ".json", "a") as file:
+                        file.write(json.dumps(tweet) + "\n")
