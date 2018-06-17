@@ -1,4 +1,5 @@
 import json
+import os
 
 '''
 What is in a tweet:
@@ -51,39 +52,33 @@ def extractInfo(tweet):
 
 tweets = []
 
-for i in range(31):
-    with open("data/" + str(i) + ".json", "r") as f:
-        for line in f.readlines():
-            tweets.append(extractInfo(json.loads(line)))
-    print(str(len(tweets)) + " tweets")
-with open("data/US.json", "a") as us:
-    for tweet in tweets:    
+for filename in os.listdir("data/"):
+    if os.path.isfile(os.path.join("data/", filename)):
+        with open("data/" + filename, "r") as f:
+            for line in f.readlines():
+                tweets.append(extractInfo(json.loads(line)))
+        print(str(len(tweets)) + " tweets")
+with open("data/filtered/US.json", "a") as us:
+    for tweet in tweets:
         if tweet["place"]["country_code"] == 'US':
             us.write(json.dumps(tweet) + "\n")
 
-with open("data/AU.json", "a") as au:
-    for tweet in tweets:    
+with open("data/filtered/AU.json", "a") as au:
+    for tweet in tweets:
         if tweet["place"]["country_code"] == 'AU':
             au.write(json.dumps(tweet) + "\n")
 
-with open("data/HR.json", "a") as hr:
-    for tweet in tweets:    
+with open("data/filtered/HR.json", "a") as hr:
+    for tweet in tweets:
         if tweet["place"]["country_code"] == 'HR':
             hr.write(json.dumps(tweet) + "\n")
 
-with open("data/GB.json", "a") as gb:
-    for tweet in tweets:    
+with open("data/filtered/GB.json", "a") as gb:
+    for tweet in tweets:
         if tweet["place"]["country_code"] == 'GB':
             gb.write(json.dumps(tweet) + "\n")
 
-with open("data/FR.json", "a") as fr:
-    for tweet in tweets:    
+with open("data/filtered/FR.json", "a") as fr:
+    for tweet in tweets:
         if tweet["place"]["country_code"] == 'FR':
-            fr.write(json.dumps(tweet) + "\n")             
-            
-
-
-
-
-
-
+            fr.write(json.dumps(tweet) + "\n")
