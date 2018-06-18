@@ -157,8 +157,8 @@ for tweet in tweets:
 
 print(str(len(goodTweets)) + " tweets left")
 for i in range(len(goodTweets) - 1, -1, -1):
-    if [re.sub("https?:\/\/.*\b", "", goodTweets[i]["text"]), goodTweets[i]["user_id"]] in [
-        [re.sub("https?:\/\/.*\b", "", tweet["text"]), tweet["user_id"]] for index, tweet in
+    if [re.sub("https?:\/\/.*", "", goodTweets[i]["text"]), goodTweets[i]["user_id"]] in [
+        [re.sub("https?:\/\/.*", "", tweet["text"]), tweet["user_id"]] for index, tweet in
         enumerate(goodTweets) if index != i
     ]:
         goodTweets.pop(i)
