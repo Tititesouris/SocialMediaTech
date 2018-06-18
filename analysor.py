@@ -47,10 +47,6 @@ countries = {
 }
 
 
-def cleanText(text):
-    return " ".join(re.sub("(@[A-Za-z0-9]+)|([^0-9A-Za-z \t])|(\w+:\/\/\S+)", " ", text).split())
-
-
 def getSentiment(tweet, language):
     if language == "en":
         analysis = TextBlob(tweet)
@@ -75,9 +71,14 @@ def getSentiment(tweet, language):
 
 def extractInfo(tweet):
     information = {}
-    if not all(key in tweet.keys() for key in ["text", "lang"]):
+    if not all(key in tweet.keys() for key in ["text", "lang", "user"]):
         return None
     information["text"] = tweet["text"]
+    try:
+        information["user_id"] = tweet["user"]["id"]
+        information["user"] = tweet["user"]["name"]
+    except Exception:
+        return None
     information["lang"] = (tweet["lang"] + "-").split("-")[0]
     if "coordinates" in tweet.keys():
         try:
@@ -117,7 +118,7 @@ def extractInfo(tweet):
         return None
 
     information["created_at"] = tweet["created_at"] if ("created_at" in tweet.keys()) else None
-    sentiment = getSentiment(cleanText(information["text"]), information["lang"])
+    sentiment = getSentiment(information["text"], information["lang"])
     if sentiment is None:
         return None
     information["sentiment"] = sentiment
@@ -144,10 +145,25 @@ for filename in os.listdir("data/"):
                 tweets.append(tweet)
     print(str(len(tweets)) + " tweets")
 
+goodTweets = []
 for tweet in tweets:
     for country, targets in countries.items():
         if isFromCountry(tweet, country):
             for target, keywords in targets.items():
                 if any(keyword in tweet["text"] for keyword in keywords):
-                    with open("analysed/" + country + "/" + target + ".json", "a") as file:
-                        file.write(json.dumps(tweet) + "\n")
+                    tweet["origin"] = country
+                    tweet["target"] = target
+                    goodTweets.append(tweet)
+
+print(str(len(goodTweets)) + " tweets left")
+for i in range(len(goodTweets) - 1, -1, -1):
+    if [re.sub("https?:\/\/.*\b", "", goodTweets[i]["text"]), goodTweets[i]["user_id"]] in [
+        [re.sub("https?:\/\/.*\b", "", tweet["text"]), tweet["user_id"]] for index, tweet in
+        enumerate(goodTweets) if index != i
+    ]:
+        goodTweets.pop(i)
+
+print(str(len(goodTweets)) + " tweets left")
+for tweet in goodTweets:
+    with open("analysed/" + tweet["origin"] + "/" + tweet["target"] + ".json", "a") as file:
+        file.write(json.dumps(tweet) + "\n")
