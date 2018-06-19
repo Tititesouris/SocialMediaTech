@@ -37,6 +37,7 @@ barWidth = 0.35
 countryKeys = ["austria", "croatia", "france", "uk", "usa"]
 countries = ["Austria", "Croatia", "France", "the UK", "the USA"]
 colors = ["green", "brown", "blue", "purple", "red"]
+hatches = ["/", "\\", "o", "+", "*"]
 OneToFive = [(i + 1) * (barWidth * 4) for i in range(5)]
 happinessReport = [7.139, 5.321, 6.489, 6.814, 6.886]
 
@@ -47,9 +48,9 @@ x = [[data["counts"][country][target] if country in data["counts"].keys() and ta
 
 for i in range(len(x)):
     if i > 0:
-        plt.bar(OneToFive, x[i], barWidth, bottom=x[i - 1], color=colors[i])
+        plt.bar(OneToFive, x[i], barWidth, bottom=x[i - 1], color=colors[i], hatch=hatches[i])
     else:
-        plt.bar(OneToFive, x[i], barWidth, color=colors[i])
+        plt.bar(OneToFive, x[i], barWidth, color=colors[i], hatch=hatches[i])
 
 plt.title("Number of tweets about countries per country")
 plt.xlabel("Country of origin")
@@ -64,8 +65,8 @@ x = [[data["self_image"][country][aspect] if country in data["self_image"].keys(
      aspect in ["positive", "negative", "neutral"]]
 
 fig, ax = plt.subplots()
-ax.bar([x - barWidth for x in OneToFive], x[0], barWidth, color="green")
-ax.bar([x for x in OneToFive], x[1], barWidth, color="red")
+ax.bar([x - barWidth for x in OneToFive], x[0], barWidth, color="green", hatch="/")
+ax.bar([x for x in OneToFive], x[1], barWidth, color="red", hatch="\\")
 ax.bar([x + barWidth for x in OneToFive], x[2], barWidth, color="blue")
 
 plt.title("Number of tweets with sentiment per country about themselves")
@@ -82,8 +83,8 @@ x = [10 * data["self_image"][country]["score"] / (
     "self_image"].keys() else 0 for country in countryKeys]
 
 fig, ax = plt.subplots()
-ax.bar([x - barWidth / 2 for x in OneToFive], x, barWidth, color="blue")
-ax.bar([x + barWidth / 2 for x in OneToFive], happinessReport, barWidth, color="green")
+ax.bar([x - barWidth / 2 for x in OneToFive], x, barWidth, color="blue", hatch="/")
+ax.bar([x + barWidth / 2 for x in OneToFive], happinessReport, barWidth, color="green", hatch="\\")
 
 plt.title("Happiness from tweets compared to the World Happiness Report")
 plt.xlabel("Country")
@@ -104,8 +105,8 @@ for i, country in enumerate(countryKeys):
           countryKeysWithoutThisOne] for aspect in ["positive", "negative", "neutral"]]
 
     fig, ax = plt.subplots()
-    ax.bar([x - barWidth for x in OneToFive[:-1]], x[0], barWidth, color="green")
-    ax.bar([x for x in OneToFive[:-1]], x[1], barWidth, color="red")
+    ax.bar([x - barWidth for x in OneToFive[:-1]], x[0], barWidth, color="green", hatch="/")
+    ax.bar([x for x in OneToFive[:-1]], x[1], barWidth, color="red", hatch="\\")
     ax.bar([x + barWidth for x in OneToFive[:-1]], x[2], barWidth, color="blue")
 
     plt.title("Number of tweets with sentiment from " + countries[i] + " about other countries")
